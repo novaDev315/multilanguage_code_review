@@ -4,12 +4,14 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { AnalysisModule } from './analysis/analysis.module';
 import { GithubModule } from './github/github.module';
+import { GitLabModule } from './gitlab/gitlab.module';
 import { RulesModule } from './rules/rules.module';
 import { RepositoriesModule } from './repositories/repositories.module';
 import { PullRequestsModule } from './pull-requests/pull-requests.module';
 import { AiModule } from './ai/ai.module';
 import { CacheModule } from './cache/cache.module';
 import { QueueModule } from './queue/queue.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -21,12 +23,14 @@ import { QueueModule } from './queue/queue.module';
     AuthModule,
     AnalysisModule,
     GithubModule,
+    GitLabModule,
     RulesModule,
     RepositoriesModule,
     PullRequestsModule,
     AiModule,
     CacheModule,
     QueueModule,
+    HealthModule,
   ],
 })
 export class AppModule {}

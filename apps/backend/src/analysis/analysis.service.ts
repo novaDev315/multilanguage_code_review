@@ -3,8 +3,11 @@ import { TreeSitterService } from './parsers/tree-sitter.service';
 import { JavaScriptAnalyzer } from './analyzers/javascript.analyzer';
 import { PythonAnalyzer } from './analyzers/python.analyzer';
 import { SecurityAnalyzer } from './analyzers/security.analyzer';
+import { PerformanceAnalyzer } from './analyzers/performance.analyzer';
 import { AiService } from '../ai/ai.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
+import * as crypto from 'crypto';
 import {
   AnalysisRequest,
   AnalysisResult,
@@ -19,20 +22,29 @@ export class AnalysisService {
     private jsAnalyzer: JavaScriptAnalyzer,
     private pythonAnalyzer: PythonAnalyzer,
     private securityAnalyzer: SecurityAnalyzer,
+    private performanceAnalyzer: PerformanceAnalyzer,
     private aiService: AiService,
     private prisma: PrismaService,
+    private cache: CacheService,
   ) {}
 
   async analyzePullRequest(request: AnalysisRequest): Promise<AnalysisResult> {
     const startTime = Date.now();
     const allIssues: CodeIssue[] = [];
 
-    // Process each file
-    for (const file of request.files) {
-      if (file.status === 'deleted') continue;
+    // Process files in batches for large PRs
+    const batchSize = 10;
+    const filesToAnalyze = request.files.filter((f) => f.status !== 'deleted');
 
-      const fileIssues = await this.analyzeFile(file);
-      allIssues.push(...fileIssues);
+    for (let i = 0; i < filesToAnalyze.length; i += batchSize) {
+      const batch = filesToAnalyze.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map((file) => this.analyzeFile(file)),
+      );
+
+      batchResults.forEach((fileIssues) => {
+        allIssues.push(...fileIssues);
+      });
     }
 
     const analysisTime = Date.now() - startTime;
@@ -88,6 +100,14 @@ export class AnalysisService {
       return issues;
     }
 
+    // Check cache first
+    const cacheKey = this.generateCacheKey(file.content, language);
+    const cachedResult = await this.cache.get<CodeIssue[]>(`analysis:${cacheKey}`);
+
+    if (cachedResult) {
+      return cachedResult.map(issue => ({ ...issue, filePath: file.filePath }));
+    }
+
     // Run static analyzers
     if (['javascript', 'typescript', 'jsx', 'tsx'].includes(language)) {
       const result = await this.jsAnalyzer.analyze(file.content, file.filePath);
@@ -96,6 +116,10 @@ export class AnalysisService {
       const result = await this.pythonAnalyzer.analyze(file.content, file.filePath);
       issues.push(...result.issues);
     }
+
+    // Run performance analyzer
+    const perfResult = await this.performanceAnalyzer.analyze(file.content, file.filePath);
+    issues.push(...perfResult.issues);
 
     // Run security analyzer
     const securityIssues = this.securityAnalyzer.analyze(
@@ -121,7 +145,17 @@ export class AnalysisService {
     }
 
     // Deduplicate issues
-    return this.deduplicateIssues(issues);
+    const deduped = this.deduplicateIssues(issues);
+
+    // Cache result for 1 hour
+    await this.cache.set(`analysis:${cacheKey}`, deduped, 3600);
+
+    return deduped;
+  }
+
+  private generateCacheKey(content: string, language: string): string {
+    const hash = crypto.createHash('md5').update(content).digest('hex');
+    return `${language}:${hash}`;
   }
 
   private deduplicateIssues(issues: CodeIssue[]): CodeIssue[] {

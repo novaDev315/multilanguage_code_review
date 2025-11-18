@@ -5,6 +5,7 @@ import { TreeSitterService } from './parsers/tree-sitter.service';
 import { JavaScriptAnalyzer } from './analyzers/javascript.analyzer';
 import { PythonAnalyzer } from './analyzers/python.analyzer';
 import { SecurityAnalyzer } from './analyzers/security.analyzer';
+import { PerformanceAnalyzer } from './analyzers/performance.analyzer';
 import { AiModule } from '../ai/ai.module';
 
 @Module({
@@ -15,6 +16,7 @@ import { AiModule } from '../ai/ai.module';
     JavaScriptAnalyzer,
     PythonAnalyzer,
     SecurityAnalyzer,
+    PerformanceAnalyzer,
   ],
   controllers: [AnalysisController],
   exports: [AnalysisService],
