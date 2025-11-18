@@ -1,0 +1,30 @@
+{
+  "name": "ai-code-review",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multi-Language AI Code Review Tool",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "frontend:dev": "npm run dev --workspace=apps/frontend",
+    "backend:dev": "npm run dev --workspace=apps/backend",
+    "db:migrate": "npm run migrate --workspace=apps/backend",
+    "db:studio": "npm run studio --workspace=apps/backend"
+  },
+  "devDependencies": {
+    "turbo": "^1.11.2",
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

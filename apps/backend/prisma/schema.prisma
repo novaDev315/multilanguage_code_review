@@ -1,0 +1,179 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id            String   @id @default(uuid())
+  name          String
+  planType      String   @map("plan_type") @db.VarChar(50)
+  githubOrgId   Int?     @map("github_org_id")
+  gitlabGroupId Int?     @map("gitlab_group_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  repositories      Repository[]
+  users             User[]
+  customRules       CustomRule[]
+  analysisMetrics   AnalysisMetric[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  name           String?
+  passwordHash   String?  @map("password_hash")
+  githubId       Int?     @unique @map("github_id")
+  gitlabId       Int?     @unique @map("gitlab_id")
+  avatarUrl      String?  @map("avatar_url")
+  organizationId String   @map("organization_id")
+  role           String   @default("developer") @db.VarChar(50)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("users")
+}
+
+model Repository {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  name           String
+  fullName       String   @map("full_name")
+  platform       String   @db.VarChar(50)
+  platformRepoId Int      @map("platform_repo_id")
+  enabled        Boolean  @default(true)
+  defaultBranch  String?  @map("default_branch") @db.VarChar(100)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pullRequests   PullRequest[]
+
+  @@unique([platform, platformRepoId])
+  @@map("repositories")
+}
+
+model PullRequest {
+  id            String    @id @default(uuid())
+  repositoryId  String    @map("repository_id")
+  prNumber      Int       @map("pr_number")
+  title         String    @db.VarChar(500)
+  status        String    @db.VarChar(50)
+  sourceBranch  String    @map("source_branch") @db.VarChar(255)
+  targetBranch  String    @map("target_branch") @db.VarChar(255)
+  authorName    String?   @map("author_name")
+  authorEmail   String?   @map("author_email")
+  analyzedAt    DateTime? @map("analyzed_at")
+  issueCount    Int       @default(0) @map("issue_count")
+  linesChanged  Int       @default(0) @map("lines_changed")
+  linesAdded    Int       @default(0) @map("lines_added")
+  linesDeleted  Int       @default(0) @map("lines_deleted")
+  filesChanged  Int       @default(0) @map("files_changed")
+  analysisStatus String   @default("pending") @map("analysis_status") @db.VarChar(50)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  repository Repository   @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  issues     CodeIssue[]
+
+  @@unique([repositoryId, prNumber])
+  @@map("pull_requests")
+}
+
+model CodeIssue {
+  id              String   @id @default(uuid())
+  pullRequestId   String   @map("pull_request_id")
+  filePath        String   @map("file_path") @db.VarChar(500)
+  lineNumber      Int      @map("line_number")
+  endLineNumber   Int?     @map("end_line_number")
+  severity        String   @db.VarChar(20)
+  category        String   @db.VarChar(50)
+  message         Text
+  fixSuggestion   Text?    @map("fix_suggestion")
+  fixCode         Text?    @map("fix_code")
+  ruleId          String?  @map("rule_id") @db.VarChar(100)
+  language        String   @db.VarChar(50)
+  confidence      Float    @default(0.0)
+  isFixApplied    Boolean  @default(false) @map("is_fix_applied")
+  isFalsePositive Boolean  @default(false) @map("is_false_positive")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  pullRequest PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+
+  @@map("code_issues")
+}
+
+model CustomRule {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  name           String   @db.VarChar(255)
+  description    Text?
+  language       String   @db.VarChar(50)
+  pattern        Text
+  severity       String   @db.VarChar(20)
+  category       String   @db.VarChar(50)
+  message        Text
+  fixTemplate    Text?    @map("fix_template")
+  enabled        Boolean  @default(true)
+  createdBy      String?  @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("custom_rules")
+}
+
+model AnalysisMetric {
+  id                    String   @id @default(uuid())
+  organizationId        String   @map("organization_id")
+  date                  DateTime @db.Date
+  prsAnalyzed           Int      @default(0) @map("prs_analyzed")
+  issuesFound           Int      @default(0) @map("issues_found")
+  fixesApplied          Int      @default(0) @map("fixes_applied")
+  falsePositiveReports  Int      @default(0) @map("false_positive_reports")
+  averageAnalysisTime   Float    @default(0.0) @map("average_analysis_time")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, date])
+  @@map("analysis_metrics")
+}
+
+model WebhookEvent {
+  id           String   @id @default(uuid())
+  platform     String   @db.VarChar(50)
+  eventType    String   @map("event_type") @db.VarChar(100)
+  payload      Json
+  processed    Boolean  @default(false)
+  processedAt  DateTime? @map("processed_at")
+  error        Text?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("webhook_events")
+}
+
+model AnalysisCache {
+  id          String   @id @default(uuid())
+  cacheKey    String   @unique @map("cache_key")
+  language    String   @db.VarChar(50)
+  codeHash    String   @map("code_hash")
+  result      Json
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([cacheKey])
+  @@index([expiresAt])
+  @@map("analysis_cache")
+}
