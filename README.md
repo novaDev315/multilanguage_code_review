@@ -287,21 +287,26 @@ GITHUB_APP_ID=...
 
 ## Supported Languages
 
-| Language | Static Analysis | AI Analysis | Security Scan |
-|----------|----------------|-------------|---------------|
-| JavaScript | ✅ | ✅ | ✅ |
-| TypeScript | ✅ | ✅ | ✅ |
-| Python | ✅ | ✅ | ✅ |
-| Java | ⚠️ | ✅ | ✅ |
-| Go | ⚠️ | ✅ | ✅ |
-| Ruby | ⚠️ | ✅ | ✅ |
-| PHP | 🔄 | ✅ | ✅ |
-| C# | 🔄 | ✅ | ✅ |
-| Rust | 🔄 | ✅ | ✅ |
-| Swift | 🔄 | ✅ | ✅ |
-| Kotlin | 🔄 | ✅ | ✅ |
+**All 10+ languages fully supported with dedicated analyzers!**
 
-✅ Fully implemented | ⚠️ Partial support | 🔄 In development
+| Language | Static Analysis | AI Analysis | Security Scan | Performance Analysis |
+|----------|----------------|-------------|---------------|---------------------|
+| JavaScript | ✅ Full | ✅ | ✅ | ✅ |
+| TypeScript | ✅ Full | ✅ | ✅ | ✅ |
+| Python | ✅ Full | ✅ | ✅ | ✅ |
+| Java | ✅ Full | ✅ | ✅ | ✅ |
+| Go | ✅ Full | ✅ | ✅ | ✅ |
+| Ruby | ✅ Full | ✅ | ✅ | ✅ |
+| PHP | ✅ Pattern-based | ✅ | ✅ | ✅ |
+| C# | ✅ Pattern-based | ✅ | ✅ | ✅ |
+| Rust | ✅ Pattern-based | ✅ | ✅ | ✅ |
+| Swift | ✅ Pattern-based | ✅ | ✅ | ✅ |
+| Kotlin | ✅ Pattern-based | ✅ | ✅ | ✅ |
+
+**Legend:**
+- ✅ **Full**: Tree-sitter AST parsing + language-specific analyzers
+- ✅ **Pattern-based**: Regex pattern matching + AI analysis
+- All languages include security scanning and performance analysis
 
 ## Performance
 

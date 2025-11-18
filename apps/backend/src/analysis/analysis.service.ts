@@ -2,8 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { TreeSitterService } from './parsers/tree-sitter.service';
 import { JavaScriptAnalyzer } from './analyzers/javascript.analyzer';
 import { PythonAnalyzer } from './analyzers/python.analyzer';
+import { JavaAnalyzer } from './analyzers/java.analyzer';
+import { GoAnalyzer } from './analyzers/go.analyzer';
+import { RubyAnalyzer } from './analyzers/ruby.analyzer';
 import { SecurityAnalyzer } from './analyzers/security.analyzer';
 import { PerformanceAnalyzer } from './analyzers/performance.analyzer';
+import { MultiLanguageAnalyzer } from './analyzers/multi-language.analyzer';
 import { AiService } from '../ai/ai.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
@@ -21,8 +25,12 @@ export class AnalysisService {
     private treeSitterService: TreeSitterService,
     private jsAnalyzer: JavaScriptAnalyzer,
     private pythonAnalyzer: PythonAnalyzer,
+    private javaAnalyzer: JavaAnalyzer,
+    private goAnalyzer: GoAnalyzer,
+    private rubyAnalyzer: RubyAnalyzer,
     private securityAnalyzer: SecurityAnalyzer,
     private performanceAnalyzer: PerformanceAnalyzer,
+    private multiLangAnalyzer: MultiLanguageAnalyzer,
     private aiService: AiService,
     private prisma: PrismaService,
     private cache: CacheService,
@@ -108,20 +116,32 @@ export class AnalysisService {
       return cachedResult.map(issue => ({ ...issue, filePath: file.filePath }));
     }
 
-    // Run static analyzers
+    // Run language-specific analyzers
     if (['javascript', 'typescript', 'jsx', 'tsx'].includes(language)) {
       const result = await this.jsAnalyzer.analyze(file.content, file.filePath);
       issues.push(...result.issues);
     } else if (language === 'python') {
       const result = await this.pythonAnalyzer.analyze(file.content, file.filePath);
       issues.push(...result.issues);
+    } else if (language === 'java') {
+      const result = await this.javaAnalyzer.analyze(file.content, file.filePath);
+      issues.push(...result.issues);
+    } else if (language === 'go') {
+      const result = await this.goAnalyzer.analyze(file.content, file.filePath);
+      issues.push(...result.issues);
+    } else if (language === 'ruby') {
+      const result = await this.rubyAnalyzer.analyze(file.content, file.filePath);
+      issues.push(...result.issues);
+    } else if (['php', 'csharp', 'rust', 'swift', 'kotlin'].includes(language)) {
+      const result = await this.multiLangAnalyzer.analyze(file.content, file.filePath);
+      issues.push(...result.issues);
     }
 
-    // Run performance analyzer
+    // Run performance analyzer (works for all languages)
     const perfResult = await this.performanceAnalyzer.analyze(file.content, file.filePath);
     issues.push(...perfResult.issues);
 
-    // Run security analyzer
+    // Run security analyzer (works for all languages)
     const securityIssues = this.securityAnalyzer.analyze(
       file.content,
       file.filePath,

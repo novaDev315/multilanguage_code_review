@@ -4,8 +4,12 @@ import { AnalysisController } from './analysis.controller';
 import { TreeSitterService } from './parsers/tree-sitter.service';
 import { JavaScriptAnalyzer } from './analyzers/javascript.analyzer';
 import { PythonAnalyzer } from './analyzers/python.analyzer';
+import { JavaAnalyzer } from './analyzers/java.analyzer';
+import { GoAnalyzer } from './analyzers/go.analyzer';
+import { RubyAnalyzer } from './analyzers/ruby.analyzer';
 import { SecurityAnalyzer } from './analyzers/security.analyzer';
 import { PerformanceAnalyzer } from './analyzers/performance.analyzer';
+import { MultiLanguageAnalyzer } from './analyzers/multi-language.analyzer';
 import { AiModule } from '../ai/ai.module';
 
 @Module({
@@ -15,8 +19,12 @@ import { AiModule } from '../ai/ai.module';
     TreeSitterService,
     JavaScriptAnalyzer,
     PythonAnalyzer,
+    JavaAnalyzer,
+    GoAnalyzer,
+    RubyAnalyzer,
     SecurityAnalyzer,
     PerformanceAnalyzer,
+    MultiLanguageAnalyzer,
   ],
   controllers: [AnalysisController],
   exports: [AnalysisService],
