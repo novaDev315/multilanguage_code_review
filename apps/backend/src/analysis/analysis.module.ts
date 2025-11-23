@@ -10,6 +10,7 @@ import { RubyAnalyzer } from './analyzers/ruby.analyzer';
 import { SecurityAnalyzer } from './analyzers/security.analyzer';
 import { PerformanceAnalyzer } from './analyzers/performance.analyzer';
 import { MultiLanguageAnalyzer } from './analyzers/multi-language.analyzer';
+import { CodeSmellAnalyzer } from './analyzers/code-smell.analyzer';
 import { AiModule } from '../ai/ai.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { AiModule } from '../ai/ai.module';
     SecurityAnalyzer,
     PerformanceAnalyzer,
     MultiLanguageAnalyzer,
+    CodeSmellAnalyzer,
   ],
   controllers: [AnalysisController],
   exports: [AnalysisService],

@@ -56,8 +56,9 @@ model Repository {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  pullRequests   PullRequest[]
+  organization            Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pullRequests            PullRequest[]
+  dependencyVulnerabilities DependencyVulnerability[]
 
   @@unique([platform, platformRepoId])
   @@map("repositories")
@@ -108,7 +109,8 @@ model CodeIssue {
   isFalsePositive Boolean  @default(false) @map("is_false_positive")
   createdAt       DateTime @default(now()) @map("created_at")
 
-  pullRequest PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  pullRequest PullRequest    @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  feedback    IssueFeedback[]
 
   @@map("code_issues")
 }
@@ -176,4 +178,80 @@ model AnalysisCache {
   @@index([cacheKey])
   @@index([expiresAt])
   @@map("analysis_cache")
+}
+
+// Feature: Learning Mode / Developer Feedback Loop
+model IssueFeedback {
+  id             String   @id @default(uuid())
+  issueId        String   @map("issue_id")
+  userId         String   @map("user_id")
+  organizationId String   @map("organization_id")
+  feedbackType   String   @map("feedback_type") @db.VarChar(50) // false_positive, helpful, not_helpful, incorrect_fix, good_fix
+  comment        Text?
+  suggestedFix   Text?    @map("suggested_fix")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  issue CodeIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+  @@index([organizationId])
+  @@index([feedbackType])
+  @@map("issue_feedback")
+}
+
+model LearnedPattern {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  ruleId         String   @map("rule_id") @db.VarChar(100)
+  language       String   @db.VarChar(50)
+  pattern        String   @db.VarChar(255)
+  skipCount      Int      @default(0) @map("skip_count")
+  reason         String?  @db.Text
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([organizationId, ruleId, language])
+  @@index([organizationId])
+  @@index([ruleId])
+  @@map("learned_patterns")
+}
+
+// Feature: Dependency Vulnerability Scanning
+model DependencyVulnerability {
+  id             String   @id @default(uuid())
+  repositoryId   String   @map("repository_id")
+  packageName    String   @map("package_name") @db.VarChar(255)
+  packageVersion String   @map("package_version") @db.VarChar(100)
+  ecosystem      String   @db.VarChar(50) // npm, pip, maven, etc.
+  severity       String   @db.VarChar(20)
+  cveId          String?  @map("cve_id") @db.VarChar(50)
+  title          String   @db.VarChar(500)
+  description    Text?
+  fixedVersion   String?  @map("fixed_version") @db.VarChar(100)
+  isResolved     Boolean  @default(false) @map("is_resolved")
+  detectedAt     DateTime @default(now()) @map("detected_at")
+  resolvedAt     DateTime? @map("resolved_at")
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId])
+  @@index([severity])
+  @@index([cveId])
+  @@map("dependency_vulnerabilities")
+}
+
+// Feature: Code Explanations Cache
+model CodeExplanation {
+  id          String   @id @default(uuid())
+  codeHash    String   @unique @map("code_hash")
+  language    String   @db.VarChar(50)
+  explanation Json
+  createdAt   DateTime @default(now()) @map("created_at")
+  accessCount Int      @default(1) @map("access_count")
+  lastAccessed DateTime @default(now()) @map("last_accessed")
+
+  @@index([codeHash])
+  @@index([language])
+  @@map("code_explanations")
 }

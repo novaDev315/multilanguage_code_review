@@ -17,6 +17,8 @@ export enum IssueCategory {
   ERROR_HANDLING = 'error_handling',
   MEMORY = 'memory',
   TYPE_SAFETY = 'type_safety',
+  CODE_SMELL = 'code_smell',
+  DEPENDENCY = 'dependency',
 }
 
 export interface CodeIssue {
