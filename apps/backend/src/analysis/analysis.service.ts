@@ -8,9 +8,12 @@ import { RubyAnalyzer } from './analyzers/ruby.analyzer';
 import { SecurityAnalyzer } from './analyzers/security.analyzer';
 import { PerformanceAnalyzer } from './analyzers/performance.analyzer';
 import { MultiLanguageAnalyzer } from './analyzers/multi-language.analyzer';
+import { CodeSmellAnalyzer } from './analyzers/code-smell.analyzer';
 import { AiService } from '../ai/ai.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
+import { DependencyScannerService } from '../security/dependency-scanner.service';
+import { FeedbackService } from '../feedback/feedback.service';
 import * as crypto from 'crypto';
 import {
   AnalysisRequest,
@@ -31,6 +34,9 @@ export class AnalysisService {
     private securityAnalyzer: SecurityAnalyzer,
     private performanceAnalyzer: PerformanceAnalyzer,
     private multiLangAnalyzer: MultiLanguageAnalyzer,
+    private codeSmellAnalyzer: CodeSmellAnalyzer,
+    private dependencyScanner: DependencyScannerService,
+    private feedbackService: FeedbackService,
     private aiService: AiService,
     private prisma: PrismaService,
     private cache: CacheService,
@@ -39,6 +45,12 @@ export class AnalysisService {
   async analyzePullRequest(request: AnalysisRequest): Promise<AnalysisResult> {
     const startTime = Date.now();
     const allIssues: CodeIssue[] = [];
+
+    // Scan for dependency vulnerabilities first
+    const dependencyIssues = await this.dependencyScanner.scanDependencies(
+      request.files.map(f => ({ filePath: f.filePath, content: f.content }))
+    );
+    allIssues.push(...dependencyIssues);
 
     // Process files in batches for large PRs
     const batchSize = 10;
@@ -136,6 +148,10 @@ export class AnalysisService {
       const result = await this.multiLangAnalyzer.analyze(file.content, file.filePath);
       issues.push(...result.issues);
     }
+
+    // Run code smell analyzer (works for all languages)
+    const codeSmellResult = await this.codeSmellAnalyzer.analyze(file.content, file.filePath);
+    issues.push(...codeSmellResult.issues);
 
     // Run performance analyzer (works for all languages)
     const perfResult = await this.performanceAnalyzer.analyze(file.content, file.filePath);

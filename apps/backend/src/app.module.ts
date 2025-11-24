@@ -12,6 +12,9 @@ import { AiModule } from './ai/ai.module';
 import { CacheModule } from './cache/cache.module';
 import { QueueModule } from './queue/queue.module';
 import { HealthModule } from './health/health.module';
+import { SecurityModule } from './security/security.module';
+import { FeedbackModule } from './feedback/feedback.module';
+import { DiffModule } from './diff/diff.module';
 
 @Module({
   imports: [
@@ -31,6 +34,9 @@ import { HealthModule } from './health/health.module';
     CacheModule,
     QueueModule,
     HealthModule,
+    SecurityModule,
+    FeedbackModule,
+    DiffModule,
   ],
 })
 export class AppModule {}
